@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskFlow – Team Task Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2336;
+    --border: #2a2f45;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --accent: #6c8fff;
+    --accent2: #a78bff;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --orange: #fb923c;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- AUTH ---- */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 30% 20%, #1a1f3c 0%, #0f1117 60%);
+    padding: 20px;
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow);
+  }
+
+  .auth-logo {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .auth-subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+
+  .tab-switch {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger { background: #ef444422; color: var(--red); border: 1px solid #ef444433; }
+  .btn-danger:hover { background: #ef444433; }
+
+  .btn-success { background: #4ade8022; color: var(--green); border: 1px solid #4ade8033; }
+
+  .err-msg {
+    background: #ef444415;
+    border: 1px solid #ef444433;
+    color: var(--red);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  /* ---- APP LAYOUT ---- */
+  #app { display: none; min-height: 100vh; }
+
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-nav { flex: 1; padding: 16px 12px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: linear-gradient(135deg, #6c8fff22, #a78bff22); color: var(--accent); }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-user {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .logout-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .logout-btn:hover { color: var(--red); }
+
+  .main {
+    margin-left: 240px;
+    min-height: 100vh;
+    padding: 32px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ---- PAGE HEADERS ---- */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .page-title { font-size: 24px; font-weight: 700; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* ---- STAT CARDS ---- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.purple .stat-value { color: var(--accent2); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.red .stat-value { color: var(--red); }
+
+  /* ---- CARDS & GRID ---- */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+  .card-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .card-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px 0 8px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+
+  /* ---- TASK LIST ---- */
+  .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .task-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+
+  .task-item:hover { border-color: var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+
+  .task-check {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+
+  .task-check.done { background: var(--green); border-color: var(--green); color: #fff; }
+  .task-check.inprogress { background: var(--yellow); border-color: var(--yellow); color: #000; }
+
+  .task-body { flex: 1; }
+  .task-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .task-title.done { text-decoration: line-through; color: var(--muted); }
+  .task-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .badge-todo { background: #6c8fff22; color: var(--accent); }
+  .badge-inprogress { background: #fbbf2422; color: var(--yellow); }
+  .badge-done { background: #4ade8022; color: var(--green); }
+  .badge-high { background: #f8717122; color: var(--red); }
+  .badge-medium { background: #fbbf2422; color: var(--yellow); }
+  .badge-low { background: #4ade8022; color: var(--green); }
+
+  .task-actions { display: flex; gap: 6px; }
+
+  /* ---- TABLE ---- */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* ---- MODAL ---- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+  }
+
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ---- SECTION ---- */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title { font-size: 15px; font-weight: 600; }
+
+  /* ---- EMPTY STATE ---- */
+  .empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+  .empty-sub { font-size: 13px; margin-top: 6px; }
+
+  /* ---- STATUS CYCLE ---- */
+  .status-cycle {
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .status-cycle:hover { transform: scale(1.1); }
+
+  /* ---- BACK BTN ---- */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Sora', sans-serif;
+    margin-bottom: 20px;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  /* ---- DUE DATE COLORS ---- */
+  .overdue { color: var(--red) !important; }
+  .due-soon { color: var(--yellow) !important; }
+
+  /* ---- LOADING ---- */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- MEMBERS LIST ---- */
+  .member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    margin: 4px;
+  }
+
+  .chip-role {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  .chip-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .chip-remove:hover { color: var(--red); }
+
+  /* ---- FILTER BAR ---- */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .filter-bar select, .filter-bar input {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  /* ---- KANBAN ---- */
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .kanban-col {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .kanban-col-header {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kanban-count {
+    background: var(--border);
+    border-radius: 20px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .kanban-task {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .kanban-task:hover { border-color: var(--accent); }
+  .kanban-task-title { font-weight: 500; margin-bottom: 6px; }
+  .kanban-task-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .main { margin-left: 0; padding: 20px; }
+    .kanban { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">⚡ TaskFlow</div>
+    <div class="auth-subtitle">Organize work. Ship faster.</div>
+
+    <div class="tab-switch">
+      <button class="tab-btn active" onclick="showTab('login')">Login</button>
+      <button class="tab-btn" onclick="showTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="auth-err" class="err-msg" style="display:none"></div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Login →</button>
+      <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">
+        Demo: admin@demo.com / admin123
+      </div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signup-form" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-pass" placeholder="Min 6 characters">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="signup-role">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="doSignup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">⚡ TaskFlow</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="goPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="goPage('projects')">
+        <span class="nav-icon">📁</span> Projects
+      </div>
+      <div class="nav-item" onclick="goPage('my-tasks')">
+        <span class="nav-icon">✅</span> My Tasks
+      </div>
+      <div id="nav-admin" style="display:none">
+        <div class="nav-item" onclick="goPage('team')">
+          <span class="nav-icon">👥</span> Team
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-name">Loading...</div>
+        <div class="user-role" id="sidebar-role">member</div>
+      </div>
+      <button class="logout-btn" onclick="showSignoutConfirm()" title="Sign Out">↩</button>
+    </div>
+    <!-- Sign Out button at bottom of sidebar -->
+    <div style="padding:0 12px 16px">
+      <button onclick="showSignoutConfirm()" style="
+        width:100%;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        padding:10px 14px;
+        background:transparent;
+        border:1px solid #ef444433;
+        border-radius:10px;
+        color:#f87171;
+        font-family:'Sora',sans-serif;
+        font-size:13px;
+        font-weight:500;
+        cursor:pointer;
+        transition:all 0.2s;
+      " onmouseover="this.style.background='#ef444415'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:15px">⏻</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="dash-greeting">Good morning!</div>
+        </div>
+      </div>
+      <div class="stats-grid" id="dash-stats"></div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Recent Tasks</div>
+        </div>
+        <div id="dash-recent"></div>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div id="page-projects" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Projects</div>
+          <div class="page-sub">All your active projects</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="new-project-btn" onclick="openModal('modal-project')" style="display:none">+ New Project</button>
+      </div>
+      <div id="projects-grid" class="cards-grid"></div>
+    </div>
+
+    <!-- PROJECT DETAIL -->
+    <div id="page-project-detail" class="page">
+      <button class="back-btn" onclick="goPage('projects')">← Back to Projects</button>
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="detail-name">Project</div>
+          <div class="page-sub" id="detail-desc"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="manage-members-btn" onclick="openManageMembers()" style="display:none">👥 Members</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddTask()">+ Add Task</button>
+          <button class="btn btn-danger btn-sm" id="delete-project-btn" onclick="deleteCurrentProject()" style="display:none">🗑</button>
+        </div>
+      </div>
+
+      <!-- View Toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <button class="btn btn-ghost btn-sm" id="view-list-btn" onclick="setView('list')">☰ List</button>
+        <button class="btn btn-ghost btn-sm" id="view-kanban-btn" onclick="setView('kanban')">⬛ Board</button>
+      </div>
+
+      <div class="filter-bar">
+        <select id="filter-status" onchange="renderTasks()">
+          <option value="">All Status</option>
+          <option value="todo">Todo</option>
+          <option value="inprogress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+        <select id="filter-priority" onchange="renderTasks()">
+          <option value="">All Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <input type="text" id="filter-search" placeholder="Search tasks..." onInput="renderTasks()" style="max-width:200px">
+      </div>
+
+      <div id="task-view-list">
+        <div id="tasks-container" class="task-list"></div>
+      </div>
+      <div id="task-view-kanban" style="display:none">
+        <div class="kanban">
+          <div class="kanban-col">
+            <div class="kanban-col-header">📋 Todo <span class="kanban-count" id="k-todo-count">0</span></div>
+            <div id="k-todo"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">⚡ In Progress <span class="kanban-count" id="k-inprogress-count">0</span></div>
+            <div id="k-inprogress"></div>
+          </div>
+          <div class="kanban-col">
+            <div class="kanban-col-header">✅ Done <span class="kanban-count" id="k-done-count">0</span></div>
+            <div id="k-done"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY TASKS -->
+    <div id="page-my-tasks" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Tasks</div>
+          <div class="page-sub">Tasks assigned to you</div>
+        </div>
+      </div>
+      <div id="my-tasks-list" class="task-list"></div>
+    </div>
+
+    <!-- TEAM -->
+    <div id="page-team" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Team</div>
+          <div class="page-sub">Manage members, passwords and access</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal(&apos;modal-create-member&apos;)">+ Create Member</button>
+      </div>
+      <div class="section">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody id="team-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<!-- New Project -->
+<div class="modal-overlay" id="modal-project">
+  <div class="modal">
+    <div class="modal-title">Create New Project</div>
+    <div class="form-group">
+      <label>Project Name *</label>
+      <input type="text" id="proj-name" placeholder="e.g. Website Redesign">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="proj-desc" placeholder="What is this project about?"></textarea>
+    </div>
+    <div id="proj-err" class="err-msg" style="display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-project')">Cancel</button>
+      <button class="btn btn-primary" onclick="createProject()" style="width:auto">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Task -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-title" id="task-modal-title">Add Task</div>
+    <div class="form-group">
+      <label>Task Title *</label>
+      <input type="text" id="task-title" placeholder="What needs to be done?">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="task-desc" placeholder="Optional details..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Assign To</label>
+      <select id="task-assignee">
+        <option value="">Unassigned</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="task-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="task-due">
+      </div>
+    </div>
+    <div id="task-err" class="err-msg" style="display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task')">Cancel</button>
+      <button class="btn btn-primary" id="task-save-btn" onclick="saveTask()" style="width:auto">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Members -->
+<div class="modal-overlay" id="modal-members">
+  <div class="modal">
+    <div class="modal-title">Manage Members</div>
+    <div id="members-list" style="margin-bottom:16px;min-height:40px"></div>
+    <div class="form-group">
+      <label>Add Member</label>
+      <select id="add-member-select">
+        <option value="">Select a user...</option>
+      </select>
+    </div>
+    <button class="btn btn-success btn-sm" onclick="addMember()">+ Add to Project</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-members')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Task -->
+<div class="modal-overlay" id="modal-edit-task">
+  <div class="modal">
+    <div class="modal-title">Edit Task</div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="edit-status">
+        <option value="todo">Todo</option>
+        <option value="inprogress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Priority</label>
+      <select id="edit-priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Assign To</label>
+      <select id="edit-assignee">
+        <option value="">Unassigned</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Due Date</label>
+      <input type="date" id="edit-due">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="deleteTask(currentEditTask)" style="margin-right:auto">🗑 Delete</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-task')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateTask()" style="width:auto">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('tf_token') || '';
+let currentUser = null;
+let currentProject = null;
+let currentTasks = [];
+let allUsers = [];
+let projectMembers = [];
+let currentEditTask = null;
+let currentView = 'list';
+let editingTaskId = null;
+
+// ---- API helper ----
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || data.errors?.[0]?.msg || 'Something went wrong');
+  return data;
+}
+
+// ---- AUTH ----
+function showTab(t) {
+  document.getElementById('login-form').style.display = t === 'login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = t === 'signup' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (i === 0) === (t === 'login')));
+  hideAuthErr();
+}
+
+function showAuthErr(msg) {
+  const el = document.getElementById('auth-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideAuthErr() { document.getElementById('auth-err').style.display = 'none'; }
+
+async function doLogin() {
+  hideAuthErr();
+  try {
+    const data = await api('POST', '/api/login', {
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-pass').value
+    });
+    token = data.token;
+    localStorage.setItem('tf_token', token);
+    currentUser = data.user;
+    initApp(data.mustChangePassword);
+  } catch(e) { showAuthErr(e.message); }
+}
+
+async function doSignup() {
+  hideAuthErr();
+  try {
+    const data = await api('POST', '/api/signup', {
+      name: document.getElementById('signup-name').value,
+      email: document.getElementById('signup-email').value,
+      password: document.getElementById('signup-pass').value,
+      role: document.getElementById('signup-role').value
+    });
+    token = data.token;
+    localStorage.setItem('tf_token', token);
+    currentUser = data.user;
+    initApp(false);
+  } catch(e) { showAuthErr(e.message); }
+}
+
+function showSignoutConfirm() {
+  openModal('modal-signout');
+}
+
+function doLogout() {
+  closeModal('modal-signout');
+  token = '';
+  localStorage.removeItem('tf_token');
+  currentUser = null;
+  // Reset nav/admin state for next login
+  document.getElementById('nav-admin').style.display = 'none';
+  document.getElementById('new-project-btn').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  // Reset auth form
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pass').value = '';
+  hideAuthErr();
+}
+
+// ---- INIT ----
+async function initApp(mustChangePw) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  if (!currentUser) {
+    try { currentUser = await api('GET', '/api/me'); } catch { doLogout(); return; }
+  }
+
+  document.getElementById('sidebar-name').textContent = currentUser.name;
+  document.getElementById('sidebar-role').textContent = currentUser.role;
+  document.getElementById('sidebar-avatar').textContent = currentUser.name[0].toUpperCase();
+
+  if (currentUser.role === 'admin') {
+    document.getElementById('nav-admin').style.display = 'block';
+    document.getElementById('new-project-btn').style.display = 'flex';
+  }
+
+  // load all users
+  try { allUsers = await api('GET', '/api/users'); } catch {}
+
+  goPage('dashboard');
+
+  // Force password change if flagged
+  if (mustChangePw) {
+    setTimeout(() => openModal('modal-change-password'), 300);
+  }
+}
+
+// ---- NAV ----
+function goPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('page-' + (page === 'project-detail' ? 'project-detail' : page)).classList.add('active');
+
+  const navMap = { dashboard: 0, projects: 1, 'project-detail': 1, 'my-tasks': 2, team: 3 };
+  const navIdx = navMap[page];
+  const navItems = document.querySelectorAll('.nav-item');
+  if (navItems[navIdx]) navItems[navIdx].classList.add('active');
+
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'projects') loadProjects();
+  else if (page === 'my-tasks') loadMyTasks();
+  else if (page === 'team') loadTeam();
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard() {
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('dash-greeting').textContent = `${greet}, ${currentUser.name.split(' ')[0]}! 👋`;
+
+  try {
+    const d = await api('GET', '/api/dashboard');
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card blue"><div class="stat-label">PROJECTS</div><div class="stat-value">${d.totalProjects}</div></div>
+      <div class="stat-card purple"><div class="stat-label">TOTAL TASKS</div><div class="stat-value">${d.totalTasks}</div></div>
+      <div class="stat-card green"><div class="stat-label">MY TASKS</div><div class="stat-value">${d.myTasks}</div></div>
+      <div class="stat-card red"><div class="stat-label">OVERDUE</div><div class="stat-value">${d.overdueTasks}</div></div>
+    `;
+
+    if (!d.recentTasks.length) {
+      document.getElementById('dash-recent').innerHTML = '<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">No tasks yet</div><div class="empty-sub">Create a project and add some tasks!</div></div>';
+    } else {
+      document.getElementById('dash-recent').innerHTML = d.recentTasks.map(t => `
+        <div class="task-item">
+          <div class="task-check ${t.status}" title="${t.status}">${t.status === 'done' ? '✓' : t.status === 'inprogress' ? '◑' : ''}</div>
+          <div class="task-body">
+            <div class="task-title ${t.status === 'done' ? 'done' : ''}">${esc(t.title)}</div>
+            <div class="task-meta">
+              <span class="badge badge-${t.status}">${statusLabel(t.status)}</span>
+              <span class="badge badge-${t.priority}">${t.priority}</span>
+              ${t.projectName ? `<span style="font-size:12px;color:var(--muted)">📁 ${esc(t.projectName)}</span>` : ''}
+              ${t.assigneeName ? `<span style="font-size:12px;color:var(--muted)">👤 ${esc(t.assigneeName)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ---- PROJECTS ----
+async function loadProjects() {
+  document.getElementById('projects-grid').innerHTML = '<div class="loading"><div class="spinner"></div> Loading projects...</div>';
+  try {
+    const projects = await api('GET', '/api/projects');
+    if (!projects.length) {
+      document.getElementById('projects-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📁</div><div class="empty-text">No projects yet</div><div class="empty-sub">${currentUser.role === 'admin' ? 'Click "New Project" to get started!' : 'Ask your admin to add you to a project.'}</div></div>`;
+      return;
+    }
+    document.getElementById('projects-grid').innerHTML = projects.map(p => {
+      const pct = p.taskCount ? Math.round((p.completedTasks / p.taskCount) * 100) : 0;
+      return `
+        <div class="card" onclick="openProject('${p.id}')">
+          <div class="card-title">${esc(p.name)}</div>
+          <div class="card-desc">${esc(p.description || 'No description')}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${pct}% complete</div>
+          <div class="card-meta">
+            <span>📋 ${p.taskCount} tasks</span>
+            <span>✅ ${p.completedTasks} done</span>
+            <span>👥 ${p.memberCount}</span>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) { document.getElementById('projects-grid').innerHTML = '<div class="empty">Failed to load projects</div>'; }
+}
+
+async function openProject(id) {
+  currentProject = null;
+  currentTasks = [];
+  projectMembers = [];
+
+  goPage('project-detail');
+  document.getElementById('tasks-container').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+
+  try {
+    currentProject = await api('GET', '/api/projects/' + id);
+    projectMembers = currentProject.members || [];
+
+    document.getElementById('detail-name').textContent = currentProject.name;
+    document.getElementById('detail-desc').textContent = currentProject.description || '';
+
+    const isAdmin = currentUser.role === 'admin';
+    document.getElementById('manage-members-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+    document.getElementById('delete-project-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+
+    await loadTasks();
+  } catch(e) { console.error(e); }
+}
+
+// ---- TASKS ----
+async function loadTasks() {
+  try {
+    currentTasks = await api('GET', '/api/projects/' + currentProject.id + '/tasks');
+    renderTasks();
+  } catch(e) { console.error(e); }
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('task-view-list').style.display = v === 'list' ? 'block' : 'none';
+  document.getElementById('task-view-kanban').style.display = v === 'kanban' ? 'block' : 'none';
+  document.getElementById('view-list-btn').style.borderColor = v === 'list' ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('view-kanban-btn').style.borderColor = v === 'kanban' ? 'var(--accent)' : 'var(--border)';
+  renderTasks();
+}
+
+function filterTasks() {
+  const status = document.getElementById('filter-status').value;
+  const priority = document.getElementById('filter-priority').value;
+  const search = document.getElementById('filter-search').value.toLowerCase();
+
+  return currentTasks.filter(t => {
+    if (status && t.status !== status) return false;
+    if (priority && t.priority !== priority) return false;
+    if (search && !t.title.toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function renderTasks() {
+  const filtered = filterTasks();
+
+  if (currentView === 'list') {
+    if (!filtered.length) {
+      document.getElementById('tasks-container').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No tasks here</div><div class="empty-sub">Add a task or adjust filters</div></div>';
+      return;
+    }
+    document.getElementById('tasks-container').innerHTML = filtered.map(t => taskItemHTML(t)).join('');
+  } else {
+    ['todo', 'inprogress', 'done'].forEach(s => {
+      const col = filtered.filter(t => t.status === s);
+      document.getElementById('k-' + s + '-count').textContent = col.length;
+      document.getElementById('k-' + s).innerHTML = col.map(t => `
+        <div class="kanban-task" onclick="openEditTask('${t.id}')">
+          <div class="kanban-task-title">${esc(t.title)}</div>
+          <div class="kanban-task-meta">
+            <span class="badge badge-${t.priority}">${t.priority}</span>
+            ${t.assigneeName ? `<span style="font-size:11px;color:var(--muted)">👤 ${esc(t.assigneeName)}</span>` : ''}
+            ${dueDateBadge(t.dueDate)}
+          </div>
+        </div>
+      `).join('') || '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Empty</div>';
+    });
+  }
+}
+
+function taskItemHTML(t) {
+  const statusIcon = t.status === 'done' ? '✓' : t.status === 'inprogress' ? '◑' : '';
+  return `
+    <div class="task-item">
+      <div class="task-check ${t.status} status-cycle" title="Click to cycle status" onclick="cycleStatus('${t.id}', '${t.status}')">${statusIcon}</div>
+      <div class="task-body">
+        <div class="task-title ${t.status === 'done' ? 'done' : ''}">${esc(t.title)}</div>
+        ${t.description ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${esc(t.description)}</div>` : ''}
+        <div class="task-meta">
+          <span class="badge badge-${t.status}">${statusLabel(t.status)}</span>
+          <span class="badge badge-${t.priority}">${t.priority}</span>
+          ${t.assigneeName ? `<span style="font-size:12px;color:var(--muted)">👤 ${esc(t.assigneeName)}</span>` : ''}
+          ${dueDateBadge(t.dueDate)}
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditTask('${t.id}')">✏️</button>
+      </div>
+    </div>
+  `;
+}
+
+function dueDateBadge(d) {
+  if (!d) return '';
+  const now = new Date(); const due = new Date(d);
+  const diff = (due - now) / (1000 * 60 * 60 * 24);
+  let cls = '', label = d;
+  if (diff < 0) { cls = 'overdue'; label = '⚠ ' + d; }
+  else if (diff < 3) { cls = 'due-soon'; label = '⏰ ' + d; }
+  return `<span style="font-size:11px;font-family:'JetBrains Mono',monospace" class="${cls}">${label}</span>`;
+}
+
+async function cycleStatus(id, current) {
+  const next = { todo: 'inprogress', inprogress: 'done', done: 'todo' };
+  try {
+    await api('PUT', '/api/tasks/' + id, { status: next[current] });
+    currentTasks = currentTasks.map(t => t.id === id ? { ...t, status: next[current] } : t);
+    renderTasks();
+  } catch(e) { console.error(e); }
+}
+
+function openAddTask() {
+  editingTaskId = null;
+  document.getElementById('task-modal-title').textContent = 'Add Task';
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-desc').value = '';
+  document.getElementById('task-priority').value = 'medium';
+  document.getElementById('task-due').value = '';
+  document.getElementById('task-err').style.display = 'none';
+
+  // Populate assignees from project members
+  const sel = document.getElementById('task-assignee');
+  sel.innerHTML = '<option value="">Unassigned</option>';
+  (projectMembers || []).forEach(m => {
+    sel.innerHTML += `<option value="${m.id}">${esc(m.name)}</option>`;
+  });
+
+  openModal('modal-task');
+}
+
+async function saveTask() {
+  const title = document.getElementById('task-title').value.trim();
+  if (!title) { showErr('task-err', 'Title is required'); return; }
+
+  try {
+    const task = await api('POST', '/api/projects/' + currentProject.id + '/tasks', {
+      title,
+      description: document.getElementById('task-desc').value,
+      assignedTo: document.getElementById('task-assignee').value || null,
+      priority: document.getElementById('task-priority').value,
+      dueDate: document.getElementById('task-due').value || null
+    });
+    currentTasks.unshift(task);
+    renderTasks();
+    closeModal('modal-task');
+  } catch(e) { showErr('task-err', e.message); }
+}
+
+function openEditTask(id) {
+  currentEditTask = id;
+  const task = currentTasks.find(t => t.id === id);
+  if (!task) return;
+
+  document.getElementById('edit-status').value = task.status;
+  document.getElementById('edit-priority').value = task.priority;
+  document.getElementById('edit-due').value = task.dueDate || '';
+
+  const sel = document.getElementById('edit-assignee');
+  sel.innerHTML = '<option value="">Unassigned</option>';
+  (projectMembers || []).forEach(m => {
+    sel.innerHTML += `<option value="${m.id}" ${m.id === task.assignedTo ? 'selected' : ''}>${esc(m.name)}</option>`;
+  });
+  if (task.assignedTo) sel.value = task.assignedTo;
+
+  openModal('modal-edit-task');
+}
+
+async function updateTask() {
+  try {
+    const updated = await api('PUT', '/api/tasks/' + currentEditTask, {
+      status: document.getElementById('edit-status').value,
+      priority: document.getElementById('edit-priority').value,
+      assignedTo: document.getElementById('edit-assignee').value || null,
+      dueDate: document.getElementById('edit-due').value || null
+    });
+    currentTasks = currentTasks.map(t => t.id === currentEditTask ? updated : t);
+    renderTasks();
+    closeModal('modal-edit-task');
+  } catch(e) { console.error(e); }
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  try {
+    await api('DELETE', '/api/tasks/' + id);
+    currentTasks = currentTasks.filter(t => t.id !== id);
+    renderTasks();
+    closeModal('modal-edit-task');
+  } catch(e) { console.error(e); }
+}
+
+// ---- MY TASKS ----
+async function loadMyTasks() {
+  document.getElementById('my-tasks-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  try {
+    const projects = await api('GET', '/api/projects');
+    let myTasks = [];
+    for (const p of projects) {
+      const tasks = await api('GET', '/api/projects/' + p.id + '/tasks');
+      tasks.filter(t => t.assignedTo === currentUser.id).forEach(t => myTasks.push({ ...t, projectName: p.name }));
+    }
+    if (!myTasks.length) {
+      document.getElementById('my-tasks-list').innerHTML = '<div class="empty"><div class="empty-icon">🎯</div><div class="empty-text">No tasks assigned to you</div><div class="empty-sub">Ask your team to assign you some work!</div></div>';
+      return;
+    }
+    document.getElementById('my-tasks-list').innerHTML = myTasks.map(t => `
+      <div class="task-item">
+        <div class="task-check ${t.status}">${t.status === 'done' ? '✓' : t.status === 'inprogress' ? '◑' : ''}</div>
+        <div class="task-body">
+          <div class="task-title ${t.status === 'done' ? 'done' : ''}">${esc(t.title)}</div>
+          <div class="task-meta">
+            <span class="badge badge-${t.status}">${statusLabel(t.status)}</span>
+            <span class="badge badge-${t.priority}">${t.priority}</span>
+            <span style="font-size:12px;color:var(--muted)">📁 ${esc(t.projectName)}</span>
+            ${dueDateBadge(t.dueDate)}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ---- TEAM ----
+let adminTargetUserId = null;
+
+async function loadTeam() {
+  try {
+    const users = await api('GET', '/api/users');
+    const isAdmin = currentUser.role === 'admin';
+    document.getElementById('team-tbody').innerHTML = users.map(u => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="width:30px;height:30px;font-size:12px">${u.name[0]}</div>
+            <div>
+              <div style="font-weight:500">${esc(u.name)}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">${esc(u.id)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--muted)">${esc(u.email)}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-high' : 'badge-todo'}">${u.role}</span></td>
+        <td>
+          ${u.mustChangePassword
+            ? '<span class="badge" style="background:#fbbf2422;color:var(--yellow)">⏳ Temp Password</span>'
+            : '<span class="badge badge-done">✓ Active</span>'}
+        </td>
+        <td>
+          ${isAdmin && u.id !== currentUser.id ? `
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="openResetPassword('${u.id}', '${esc(u.name)}')">🔑 Reset PW</button>
+              <button class="btn btn-ghost btn-sm" onclick="openGenLink('${u.id}', '${esc(u.name)}')">🔗 Access Link</button>
+            </div>
+          ` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+// Create member (admin)
+async function adminCreateMember() {
+  const name = document.getElementById('cm-name').value.trim();
+  const email = document.getElementById('cm-email').value.trim();
+  if (!name || !email) { showErr('cm-err', 'Name and email are required'); return; }
+
+  document.getElementById('cm-err').style.display = 'none';
+  document.getElementById('cm-submit-btn').textContent = 'Creating...';
+  document.getElementById('cm-submit-btn').disabled = true;
+
+  try {
+    const data = await api('POST', '/api/admin/create-member', { name, email });
+    // Show result
+    document.getElementById('cm-res-email').textContent = email;
+    document.getElementById('cm-res-pass').textContent = data.tempPassword;
+    document.getElementById('cm-res-url').textContent = data.loginUrl;
+    document.getElementById('cm-result').style.display = 'block';
+    document.getElementById('cm-submit-btn').style.display = 'none';
+    document.getElementById('cm-name').value = '';
+    document.getElementById('cm-email').value = '';
+    // Refresh user list for project member dropdowns
+    allUsers = await api('GET', '/api/users');
+  } catch(e) {
+    showErr('cm-err', e.message);
+    document.getElementById('cm-submit-btn').textContent = 'Create Member';
+    document.getElementById('cm-submit-btn').disabled = false;
+  }
+}
+
+// Reset password (admin)
+function openResetPassword(userId, name) {
+  adminTargetUserId = userId;
+  document.getElementById('reset-target-name').textContent = name;
+  document.getElementById('reset-result').style.display = 'none';
+  document.getElementById('reset-err').style.display = 'none';
+  document.getElementById('reset-submit-btn').textContent = 'Reset Password';
+  document.getElementById('reset-submit-btn').disabled = false;
+  openModal('modal-reset-password');
+}
+
+async function adminResetPassword() {
+  document.getElementById('reset-submit-btn').textContent = 'Resetting...';
+  document.getElementById('reset-submit-btn').disabled = true;
+  try {
+    const data = await api('POST', '/api/admin/reset-password/' + adminTargetUserId);
+    document.getElementById('reset-res-pass').textContent = data.tempPassword;
+    document.getElementById('reset-result').style.display = 'block';
+    document.getElementById('reset-submit-btn').style.display = 'none';
+  } catch(e) {
+    showErr('reset-err', e.message);
+    document.getElementById('reset-submit-btn').textContent = 'Reset Password';
+    document.getElementById('reset-submit-btn').disabled = false;
+  }
+}
+
+// Generate link (admin)
+function openGenLink(userId, name) {
+  adminTargetUserId = userId;
+  document.getElementById('link-target-name').textContent = name;
+  document.getElementById('link-result').style.display = 'none';
+  document.getElementById('link-err').style.display = 'none';
+  document.getElementById('link-submit-btn').textContent = 'Generate Link';
+  document.getElementById('link-submit-btn').disabled = false;
+  openModal('modal-gen-link');
+}
+
+async function adminGenLink() {
+  document.getElementById('link-submit-btn').textContent = 'Generating...';
+  document.getElementById('link-submit-btn').disabled = true;
+  try {
+    const data = await api('POST', '/api/admin/generate-link/' + adminTargetUserId);
+    document.getElementById('link-res-url').textContent = data.link;
+    document.getElementById('link-expires').textContent = new Date(data.expiresAt).toLocaleString();
+    document.getElementById('link-result').style.display = 'block';
+    document.getElementById('link-submit-btn').style.display = 'none';
+  } catch(e) {
+    showErr('link-err', e.message);
+    document.getElementById('link-submit-btn').textContent = 'Generate Link';
+    document.getElementById('link-submit-btn').disabled = false;
+  }
+}
+
+// Force change password (for users with mustChangePassword)
+async function doChangePassword() {
+  const np = document.getElementById('cp-new').value;
+  const conf = document.getElementById('cp-confirm').value;
+  if (!np || np.length < 6) { showErr('cp-err', 'Password must be at least 6 characters'); return; }
+  if (np !== conf) { showErr('cp-err', 'Passwords do not match'); return; }
+  document.getElementById('cp-err').style.display = 'none';
+  try {
+    await api('POST', '/api/change-password', { newPassword: np });
+    closeModal('modal-change-password');
+    document.getElementById('cp-new').value = '';
+    document.getElementById('cp-confirm').value = '';
+    // Proceed to app normally
+    goPage('dashboard');
+  } catch(e) { showErr('cp-err', e.message); }
+}
+
+// Copy text helper
+function copyText(elId) {
+  const text = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    // brief feedback
+    const el = document.getElementById(elId).parentElement.querySelector('button');
+    if (el) { const orig = el.textContent; el.textContent = '✓ Copied!'; setTimeout(() => el.textContent = orig, 1500); }
+  });
+}
+
+// ---- PROJECTS CRUD ----
+async function createProject() {
+  const name = document.getElementById('proj-name').value.trim();
+  if (!name) { showErr('proj-err', 'Project name is required'); return; }
+  try {
+    await api('POST', '/api/projects', { name, description: document.getElementById('proj-desc').value });
+    closeModal('modal-project');
+    document.getElementById('proj-name').value = '';
+    document.getElementById('proj-desc').value = '';
+    loadProjects();
+  } catch(e) { showErr('proj-err', e.message); }
+}
+
+async function deleteCurrentProject() {
+  if (!confirm('Delete this project and ALL its tasks? This cannot be undone.')) return;
+  try {
+    await api('DELETE', '/api/projects/' + currentProject.id);
+    goPage('projects');
+  } catch(e) { console.error(e); }
+}
+
+// ---- MEMBERS ----
+async function openManageMembers() {
+  renderMembersList();
+
+  const sel = document.getElementById('add-member-select');
+  sel.innerHTML = '<option value="">Select a user...</option>';
+  const memberIds = projectMembers.map(m => m.id);
+  allUsers.filter(u => !memberIds.includes(u.id)).forEach(u => {
+    sel.innerHTML += `<option value="${u.id}">${esc(u.name)} (${u.email})</option>`;
+  });
+
+  openModal('modal-members');
+}
+
+function renderMembersList() {
+  document.getElementById('members-list').innerHTML = projectMembers.map(m => `
+    <div class="member-chip">
+      <div class="avatar" style="width:24px;height:24px;font-size:10px">${m.name[0]}</div>
+      ${esc(m.name)}
+      <span class="chip-role">${m.role}</span>
+      ${m.id !== currentUser.id ? `<button class="chip-remove" onclick="removeMember('${m.id}')">×</button>` : ''}
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px">No members yet</div>';
+}
+
+async function addMember() {
+  const userId = document.getElementById('add-member-select').value;
+  if (!userId) return;
+  try {
+    await api('POST', '/api/projects/' + currentProject.id + '/members', { userId });
+    const user = allUsers.find(u => u.id === userId);
+    if (user) projectMembers.push({ id: user.id, name: user.name, email: user.email, role: 'member' });
+    renderMembersList();
+    // Refresh select
+    const sel = document.getElementById('add-member-select');
+    sel.innerHTML = '<option value="">Select a user...</option>';
+    const memberIds = projectMembers.map(m => m.id);
+    allUsers.filter(u => !memberIds.includes(u.id)).forEach(u => {
+      sel.innerHTML += `<option value="${u.id}">${esc(u.name)} (${u.email})</option>`;
+    });
+  } catch(e) { alert(e.message); }
+}
+
+async function removeMember(userId) {
+  if (!confirm('Remove this member from the project?')) return;
+  try {
+    await api('DELETE', '/api/projects/' + currentProject.id + '/members/' + userId);
+    projectMembers = projectMembers.filter(m => m.id !== userId);
+    renderMembersList();
+  } catch(e) { alert(e.message); }
+}
+
+// ---- UTILS ----
+function openModal(id) {
+  if (id === 'modal-create-member') {
+    document.getElementById('cm-result').style.display = 'none';
+    document.getElementById('cm-err').style.display = 'none';
+    document.getElementById('cm-submit-btn').style.display = '';
+    document.getElementById('cm-submit-btn').textContent = 'Create Member';
+    document.getElementById('cm-submit-btn').disabled = false;
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function statusLabel(s) { return { todo: 'Todo', inprogress: 'In Progress', done: 'Done' }[s] || s; }
+
+// Close modals on overlay click (except forced change-password)
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el && el.id !== 'modal-change-password') el.classList.remove('open');
+  });
+});
+
+// Enter key on auth
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+
+// ---- AUTO LOGIN & MAGIC LINK ----
+(async () => {
+  // Handle magic access link (?token=xxx or /access?token=xxx)
+  const urlParams = new URLSearchParams(window.location.search);
+  const magicToken = urlParams.get('token');
+  if (magicToken) {
+    try {
+      const data = await fetch('/api/access-link/' + magicToken).then(r => r.json());
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem('tf_token', token);
+        currentUser = data.user;
+        // Clean URL
+        window.history.replaceState({}, document.title, '/');
+        initApp(data.mustChangePassword);
+        return;
+      }
+    } catch(e) { console.error('Magic link error', e); }
+  }
+
+  if (token) {
+    try {
+      currentUser = await api('GET', '/api/me');
+      initApp(false);
+    } catch { token = ''; localStorage.removeItem('tf_token'); }
+  }
+})();
+</script>
+
+<!-- Change Password (forced) -->
+<div class="modal-overlay" id="modal-change-password">
+  <div class="modal">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px;margin-bottom:8px">🔐</div>
+      <div class="modal-title" style="margin-bottom:4px">Set Your Password</div>
+      <div style="font-size:13px;color:var(--muted)">Your account was set up by an admin.<br>Please choose your own password to continue.</div>
+    </div>
+    <div class="form-group">
+      <label>New Password</label>
+      <input type="password" id="cp-new" placeholder="At least 6 characters">
+    </div>
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input type="password" id="cp-confirm" placeholder="Type again">
+    </div>
+    <div id="cp-err" class="err-msg" style="display:none"></div>
+    <button class="btn btn-primary" onclick="doChangePassword()">Set Password & Continue →</button>
+  </div>
+</div>
+
+<!-- Create Member (admin) -->
+<div class="modal-overlay" id="modal-create-member">
+  <div class="modal">
+    <div class="modal-title">Create New Member</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">A temporary password will be generated. Share it with the member — they will be asked to change it on first login.</div>
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="cm-name" placeholder="e.g. Sarah Wilson">
+    </div>
+    <div class="form-group">
+      <label>Email *</label>
+      <input type="email" id="cm-email" placeholder="sarah@company.com">
+    </div>
+    <div id="cm-err" class="err-msg" style="display:none"></div>
+    <!-- Result box shown after creation -->
+    <div id="cm-result" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px">✅ Member created! Share these credentials:</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px">EMAIL</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;background:var(--bg);padding:8px 12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+            <span id="cm-res-email"></span>
+            <button class="btn btn-ghost btn-sm" onclick="copyText('cm-res-email')">Copy</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px">TEMP PASSWORD</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;background:var(--bg);padding:8px 12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+            <span id="cm-res-pass"></span>
+            <button class="btn btn-ghost btn-sm" onclick="copyText('cm-res-pass')">Copy</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px">LOGIN URL</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--bg);padding:8px 12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;word-break:break-all;gap:8px">
+            <span id="cm-res-url"></span>
+            <button class="btn btn-ghost btn-sm" onclick="copyText('cm-res-url')" style="flex-shrink:0">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-create-member');loadTeam()">Close</button>
+      <button class="btn btn-primary" id="cm-submit-btn" onclick="adminCreateMember()" style="width:auto">Create Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password (admin) -->
+<div class="modal-overlay" id="modal-reset-password">
+  <div class="modal">
+    <div class="modal-title">Reset Password</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">A new temporary password will be generated for <strong id="reset-target-name" style="color:var(--text)"></strong>. They will be asked to change it on next login.</div>
+    <div id="reset-result" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--yellow);margin-bottom:10px">🔑 New temporary password:</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;background:var(--bg);padding:12px 16px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+        <span id="reset-res-pass"></span>
+        <button class="btn btn-ghost btn-sm" onclick="copyText('reset-res-pass')">Copy</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">⚠️ Share this with the user. It will not be shown again.</div>
+    </div>
+    <div id="reset-err" class="err-msg" style="display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reset-password');loadTeam()">Close</button>
+      <button class="btn btn-danger" id="reset-submit-btn" onclick="adminResetPassword()" style="width:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none">Reset Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Access Link (admin) -->
+<div class="modal-overlay" id="modal-gen-link">
+  <div class="modal">
+    <div class="modal-title">Generate Access Link</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Generate a one-time login link for <strong id="link-target-name" style="color:var(--text)"></strong>. The link expires in <strong style="color:var(--text)">24 hours</strong> and can only be used once.</div>
+    <div id="link-result" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px">🔗 Access link generated:</div>
+      <div style="font-size:12px;background:var(--bg);padding:10px 12px;border-radius:6px;word-break:break-all;font-family:'JetBrains Mono',monospace;display:flex;gap:8px;align-items:flex-start">
+        <span id="link-res-url" style="flex:1"></span>
+        <button class="btn btn-ghost btn-sm" onclick="copyText('link-res-url')" style="flex-shrink:0">Copy</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Expires: <span id="link-expires" style="color:var(--yellow)"></span></div>
+    </div>
+    <div id="link-err" class="err-msg" style="display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-gen-link')">Close</button>
+      <button class="btn btn-primary" id="link-submit-btn" onclick="adminGenLink()" style="width:auto">Generate Link</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Sign Out Confirm Modal -->
+<div class="modal-overlay" id="modal-signout">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:44px;margin-bottom:12px">👋</div>
+    <div class="modal-title" style="text-align:center">Sign Out?</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:28px">You will be taken back to the login screen. Any unsaved changes will be lost.</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-signout')" style="flex:1">Cancel</button>
+      <button onclick="doLogout()" style="
+        flex:1;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        padding:12px 20px;
+        border:none;
+        border-radius:12px;
+        background:#ef444422;
+        color:#f87171;
+        font-family:'Sora',sans-serif;
+        font-size:14px;
+        font-weight:600;
+        cursor:pointer;
+        border:1px solid #ef444433;
+        transition:all 0.2s;
+      " onmouseover="this.style.background='#ef444433'" onmouseout="this.style.background='#ef444422'">
+        ⏻ Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
